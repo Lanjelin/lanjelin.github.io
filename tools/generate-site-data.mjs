@@ -110,6 +110,13 @@ function newestVersionDate(versions) {
   return formatDate(timestamps[0].toISOString());
 }
 
+function humanizeSlug(value) {
+  return String(value)
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 async function sortPackages() {
   const packages = [];
 
@@ -120,12 +127,8 @@ async function sortPackages() {
     ]);
     const repoPath = PACKAGE_REPOS[name];
     const connectedRepo = repoPath ? await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null) : null;
-    const about = String(connectedRepo?.description || "").trim();
+    const about = String(connectedRepo?.description || "").trim() || humanizeSlug(name);
     const updated = newestVersionDate(versions);
-
-    if (STRICT_SITE_DATA && !about) {
-      throw new Error(`Missing package about text: ${name}`);
-    }
 
     packages.push({
       name,
