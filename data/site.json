@@ -62,28 +62,46 @@
   ],
   "packages": [
     {
-      "name": "ghcr.io/lanjelin/nbnopy",
-      "description": "Container build for the NBNO.py downloader.",
-      "statsText": "GHCR artifact · repo-backed",
-      "url": "https://github.com/Lanjelin/NBNO.py"
+      "name": "openaudible-docker",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/openaudible-docker"
     },
     {
-      "name": "ghcr.io/lanjelin/sishc",
-      "description": "Packaged tunnel manager image from the sishc project.",
-      "statsText": "GHCR artifact · repo-backed",
-      "url": "https://github.com/Lanjelin/sishc"
+      "name": "tor-zero",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/tor-zero"
     },
     {
-      "name": "ghcr.io/lanjelin/obsidian-docker",
-      "description": "Obsidian in a browser-friendly container.",
-      "statsText": "GHCR artifact · repo-backed",
-      "url": "https://github.com/Lanjelin/Obsidian-docker"
+      "name": "monerod-zero",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/monerod-zero"
     },
     {
-      "name": "GitHub Packages",
-      "description": "Public package listings were not available from the API, so this section points back to package-producing repos.",
-      "statsText": "Profile packages: 30",
-      "url": "https://github.com/Lanjelin?tab=packages"
+      "name": "nvim-docker",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/nvim-docker"
+    },
+    {
+      "name": "proton-bridge-rootless",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/proton-bridge-rootless"
+    },
+    {
+      "name": "handl",
+      "description": "Published package.",
+      "chip": "published",
+      "statsText": "Last updated",
+      "url": "https://github.com/users/Lanjelin/packages/container/package/handl"
     }
   ]
 }

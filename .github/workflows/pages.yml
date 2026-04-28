@@ -43,6 +43,14 @@ jobs:
           const fs = require('node:fs');
           const data = JSON.parse(fs.readFileSync('data/site.json', 'utf8'));
           const packages = Array.isArray(data.packages) ? data.packages : [];
+          const expectedNames = [
+            'openaudible-docker',
+            'tor-zero',
+            'monerod-zero',
+            'nvim-docker',
+            'proton-bridge-rootless',
+            'handl',
+          ];
           const hasPlaceholder = packages.some((entry) => {
             const text = `${entry?.name || ''} ${entry?.description || ''} ${entry?.statsText || ''}`;
             return (
@@ -57,15 +65,15 @@ jobs:
             throw new Error('Generated site data still contains placeholder package entries.');
           }
 
-          const hasDownloadStats = packages.every((entry) => /downloads$/.test(String(entry?.statsText || '').trim()));
-          if (!hasDownloadStats) {
-            throw new Error('Generated site data does not contain download counts for all packages.');
+          const names = packages.map((entry) => String(entry?.name || ''));
+          const orderMatches = expectedNames.every((name, index) => names[index] === name);
+          if (!orderMatches || packages.length !== expectedNames.length) {
+            throw new Error('Generated site data does not match the requested package order.');
           }
 
-          const counts = packages.map((entry) => Number(entry?.downloadCount || 0));
-          const sorted = counts.every((value, index) => index === 0 || value <= counts[index - 1]);
-          if (!sorted) {
-            throw new Error('Generated site data is not sorted by descending download count.');
+          const labelsMatch = packages.every((entry) => String(entry?.chip || '') === 'published' && /^Last updated/.test(String(entry?.statsText || '')));
+          if (!labelsMatch) {
+            throw new Error('Generated site data does not have the expected package labels.');
           }
 
           if (packages.length === 0) {

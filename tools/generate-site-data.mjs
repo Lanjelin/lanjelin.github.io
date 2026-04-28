@@ -4,6 +4,14 @@ import path from "node:path";
 const USERNAME = "Lanjelin";
 const API_BASE = "https://api.github.com";
 const STRICT_SITE_DATA = process.env.STRICT_SITE_DATA === "true";
+const PACKAGE_ORDER = [
+  "openaudible-docker",
+  "tor-zero",
+  "monerod-zero",
+  "nvim-docker",
+  "proton-bridge-rootless",
+  "handl",
+];
 
 const FALLBACK = {
   profile: {
@@ -40,25 +48,6 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function fetchHtml(url) {
-  const headers = {
-    Accept: "text/html,application/xhtml+xml",
-    "User-Agent": "Mozilla/5.0 (compatible; GitHubPagesBot/1.0)",
-  };
-
-  const token = process.env.GH_PACKAGES_TOKEN || process.env.GITHUB_TOKEN;
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`);
-  }
-
-  return response.text();
-}
-
 function sortRepos(repos) {
   return repos
     .filter((repo) => !repo.fork)
@@ -80,104 +69,40 @@ function sortRepos(repos) {
     }));
 }
 
-function decodeHtmlEntities(text) {
-  return text
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'");
-}
-
-function htmlToText(html) {
-  const cleaned = html
-    .replace(/<script[\s\S]*?<\/script>/gi, "\n")
-    .replace(/<style[\s\S]*?<\/style>/gi, "\n")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "\n")
-    .replace(/<\/(p|div|li|tr|h[1-6]|section|article|main|nav|header|footer)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, "\n");
-
-  return decodeHtmlEntities(cleaned)
-    .replace(/\r/g, "\n")
-    .replace(/\n{2,}/g, "\n")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-function parseDownloadCount(raw) {
-  const value = String(raw).trim().replace(/,/g, "");
-  const match = value.match(/^([\d.]+)\s*([kKmMbB]?)$/);
-  if (!match) {
-    return 0;
-  }
-
-  const number = Number.parseFloat(match[1]);
-  if (Number.isNaN(number)) {
-    return 0;
-  }
-
-  const multiplier = {
-    "": 1,
-    k: 1_000,
-    m: 1_000_000,
-    b: 1_000_000_000,
-  }[match[2].toLowerCase()] || 1;
-
-  return Math.round(number * multiplier);
-}
-
-async function scrapePackages() {
-  const html = await fetchHtml(`https://github.com/${USERNAME}?tab=packages&sort_by=downloads_desc`);
-  const lines = htmlToText(html);
-  const start = lines.findIndex((line) => /^Sort by:\s+Most downloads$/i.test(line));
-  const scope = start >= 0 ? lines.slice(start) : lines;
-  const packages = [];
-
-  for (let i = 0; i < scope.length - 2; i += 1) {
-    const nameLine = scope[i];
-    const publishedLine = scope[i + 1];
-    const countLine = scope[i + 2];
-
-    if (!/^[*•]\s+/.test(nameLine)) {
-      continue;
-    }
-
-    if (!/^Published\b/i.test(publishedLine)) {
-      continue;
-    }
-
-    if (!/^[\d.,]+\s*[kKmMbB]?$/.test(countLine)) {
-      continue;
-    }
-
-    const name = nameLine.replace(/^[*•]\s+/, "").trim();
-    const rawCount = countLine.trim();
-    const downloadCount = parseDownloadCount(rawCount);
-
-    packages.push({
-      name,
-      description: "GitHub package.",
-      chip: "container",
-      downloadCount,
-      statsText: `${rawCount} total downloads`,
-      url: `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
-    });
-  }
-
-  packages.sort((a, b) => b.downloadCount - a.downloadCount);
-
-  if (STRICT_SITE_DATA && packages.length === 0) {
-    throw new Error("No packages were scraped from the GitHub packages page.");
-  }
-
-  return packages.slice(0, 6);
-}
-
 async function sortPackages() {
-  return scrapePackages();
+  const entries = await fetchJson(`${API_BASE}/users/${USERNAME}/packages?package_type=container&per_page=100`);
+  const byName = new Map(entries.map((entry) => [entry.name, entry]));
+
+  const packages = PACKAGE_ORDER.map((name) => {
+    const entry = byName.get(name);
+    if (!entry) {
+      if (STRICT_SITE_DATA) {
+        throw new Error(`Missing package: ${name}`);
+      }
+
+      return {
+        name,
+        description: "Published package.",
+        chip: "published",
+        statsText: "Last updated",
+        url: `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
+      };
+    }
+
+    return {
+      name,
+      description: "Published package.",
+      chip: "published",
+      statsText: `Last updated ${new Date(entry.updated_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      })}`,
+      url: entry.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
+    };
+  });
+
+  return packages;
 }
 
 async function main() {
