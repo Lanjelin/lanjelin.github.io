@@ -129,12 +129,62 @@ function extractMetaContent(html, metaName) {
   return match ? match[1].trim() : "";
 }
 
+function htmlToText(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, "\n")
+    .replace(/<style[\s\S]*?<\/style>/gi, "\n")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|tr|h[1-6]|section|article|main|nav|header|footer)>/gi, "\n")
+    .replace(/<[^>]+>/g, "\n")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function cleanAboutText(text) {
   return String(text || "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\s+\|\s+GitHub$/, "")
     .replace(/\s+\|\s+.*$/, "");
+}
+
+function extractReadmeLine(html) {
+  const lines = htmlToText(html);
+  const readmeIndex = lines.findIndex((line) => /^README$/i.test(line));
+  const startIndex = readmeIndex >= 0 ? readmeIndex + 1 : 0;
+  const skip = new Set([
+    "Learn more about packages",
+    "Install from the command line",
+    "Details",
+    "Last published",
+    "Total downloads",
+    "README",
+  ]);
+
+  for (let i = startIndex; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line || skip.has(line)) {
+      continue;
+    }
+    if (line.startsWith("Published ") || line.startsWith("Version downloads")) {
+      continue;
+    }
+    if (line.length < 8) {
+      continue;
+    }
+    return line;
+  }
+
+  return "";
 }
 
 function extractConnectedRepoPath(html) {
@@ -173,8 +223,10 @@ async function sortPackages() {
     const pageHtml = await fetchHtml(detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`);
     const connectedRepoPath = extractConnectedRepoPath(pageHtml);
     const connectedRepo = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}`) : null;
+    const readmeLine = cleanAboutText(extractReadmeLine(pageHtml));
     const about = cleanAboutText(
       connectedRepo?.description ||
+        readmeLine ||
         extractMetaContent(pageHtml, "description") ||
         extractMetaContent(pageHtml, "og:description") ||
         detail.description ||
