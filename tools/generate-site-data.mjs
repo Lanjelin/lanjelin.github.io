@@ -110,45 +110,6 @@ function newestVersionDate(versions) {
   return formatDate(timestamps[0].toISOString());
 }
 
-function cleanAboutText(text) {
-  return String(text || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\s+\|\s+GitHub$/, "")
-    .replace(/\s+\|\s+.*$/, "");
-}
-
-function packageSlugToAbout(name) {
-  return name
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .trim();
-}
-
-function readmeSummaryFromContent(content) {
-  const lines = String(content || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      continue;
-    }
-    const summary = cleanAboutText(
-      line
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
-        .replace(/[*_`~]/g, ""),
-    );
-    if (summary.length >= 12) {
-      return summary;
-    }
-  }
-
-  return "";
-}
-
 async function sortPackages() {
   const packages = [];
 
@@ -159,21 +120,16 @@ async function sortPackages() {
     ]);
     const repoPath = PACKAGE_REPOS[name];
     const connectedRepo = repoPath ? await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null) : null;
-    const repoReadme = repoPath ? await fetchJson(`${API_BASE}/repos/${repoPath}/readme`).catch(() => null) : null;
-    const about = cleanAboutText(
-      connectedRepo?.description ||
-        (repoReadme?.content ? readmeSummaryFromContent(Buffer.from(repoReadme.content, "base64").toString("utf8")) : ""),
-    );
-    const displayAbout = about || packageSlugToAbout(name);
+    const about = String(connectedRepo?.description || "").trim();
     const updated = newestVersionDate(versions);
 
-    if (STRICT_SITE_DATA && !displayAbout) {
+    if (STRICT_SITE_DATA && !about) {
       throw new Error(`Missing package about text: ${name}`);
     }
 
     packages.push({
       name,
-      description: displayAbout,
+      description: about,
       chip: "published",
       statsText: updated ? `Last updated ${updated}` : "Last updated",
       url: detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
