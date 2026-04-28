@@ -102,39 +102,21 @@ function newestVersionDate(versions) {
 }
 
 async function sortPackages() {
-  const entries = await fetchJson(`${API_BASE}/users/${USERNAME}/packages?package_type=container&per_page=100`);
-  const byName = new Map(entries.map((entry) => [entry.name, entry]));
-
   const packages = [];
 
   for (const name of PACKAGE_ORDER) {
-    const entry = byName.get(name);
-    if (!entry) {
-      if (STRICT_SITE_DATA) {
-        throw new Error(`Missing package: ${name}`);
-      }
-
-      packages.push({
-        name,
-        description: "About unavailable.",
-        chip: "published",
-        statsText: "Last updated",
-        url: `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
-      });
-      continue;
-    }
-
-    const versions = await fetchJson(
-      `${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`,
-    );
+    const [detail, versions] = await Promise.all([
+      fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}`),
+      fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
+    ]);
     const updated = newestVersionDate(versions);
 
     packages.push({
       name,
-      description: entry.description || "About unavailable.",
+      description: detail.description || "About unavailable.",
       chip: "published",
       statsText: updated ? `Last updated ${updated}` : "Last updated",
-      url: entry.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
+      url: detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
     });
   }
 
