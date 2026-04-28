@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Lanjelin's GitHub landing page" />
+    <title>Lanjelin on GitHub</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="desktop">
+      <main class="shell">
+        <section class="window hero" aria-labelledby="hero-title">
+          <div class="title-bar">
+            <div class="window-controls window-controls-left" aria-hidden="true">
+              <span class="control minus">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="2" y="4" width="6" height="2" /></svg>
+              </span>
+            </div>
+            <span>Lanjelin.exe</span>
+            <div class="window-controls window-controls-right" aria-hidden="true">
+              <span class="control arrow-down">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 3L5 7.5L8.75 3Z" /></svg>
+              </span>
+              <span class="control arrow-up">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 7L5 2.5L8.75 7Z" /></svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="window-body hero-grid">
+            <div class="profile-card">
+              <img
+                class="portrait"
+                id="profile-avatar"
+                alt="Lanjelin avatar"
+                src="https://github.com/Lanjelin.png?size=192"
+              />
+              <div class="profile-lines" aria-label="Profile details">
+                <h1 id="hero-title">Lanjelin</h1>
+                <p id="hero-bio" class="profile-line">Pondering upon world domination.</p>
+                <p id="hero-company" class="profile-line">Company</p>
+                <p id="hero-country" class="profile-line">Norway</p>
+              </div>
+            </div>
+
+            <div class="stats-grid" aria-label="Profile stats">
+              <div class="stat-box">
+                <span class="stat-value" data-stat="repos">67</span>
+                <span class="stat-label">repositories</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" data-stat="packages">30</span>
+                <span class="stat-label">packages</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" data-stat="stars">123</span>
+                <span class="stat-label">stars</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" data-stat="followers">28</span>
+                <span class="stat-label">followers</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid-layout">
+          <section class="window" aria-labelledby="repos-title">
+            <div class="title-bar">
+              <div class="window-controls window-controls-left" aria-hidden="true">
+                <span class="control minus">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="2" y="4" width="6" height="2" /></svg>
+                </span>
+              </div>
+              <span>Most popular repos</span>
+              <div class="window-controls window-controls-right" aria-hidden="true">
+                <span class="control arrow-down">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 3L5 7.5L8.75 3Z" /></svg>
+                </span>
+                <span class="control arrow-up">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 7L5 2.5L8.75 7Z" /></svg>
+                </span>
+              </div>
+            </div>
+            <div class="window-body">
+              <h2 id="repos-title" class="section-title">Pinned work</h2>
+              <div id="repos" class="cards" aria-live="polite"></div>
+            </div>
+          </section>
+
+          <section class="window" aria-labelledby="packages-title">
+            <div class="title-bar">
+              <div class="window-controls window-controls-left" aria-hidden="true">
+                <span class="control minus">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="2" y="4" width="6" height="2" /></svg>
+                </span>
+              </div>
+              <span>GitHub Packages</span>
+              <div class="window-controls window-controls-right" aria-hidden="true">
+                <span class="control arrow-down">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 3L5 7.5L8.75 3Z" /></svg>
+                </span>
+                <span class="control arrow-up">
+                  <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 7L5 2.5L8.75 7Z" /></svg>
+                </span>
+              </div>
+            </div>
+            <div class="window-body">
+              <h2 id="packages-title" class="section-title">Published items</h2>
+              <div id="packages" class="cards" aria-live="polite"></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="window donate" aria-labelledby="donate-title">
+          <div class="title-bar">
+            <div class="window-controls window-controls-left" aria-hidden="true">
+              <span class="control minus">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="2" y="4" width="6" height="2" /></svg>
+              </span>
+            </div>
+            <span>Support</span>
+            <div class="window-controls window-controls-right" aria-hidden="true">
+              <span class="control arrow-down">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 3L5 7.5L8.75 3Z" /></svg>
+              </span>
+              <span class="control arrow-up">
+                <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.25 7L5 2.5L8.75 7Z" /></svg>
+              </span>
+            </div>
+          </div>
+          <div class="window-body donate-body">
+            <div class="support-copy">
+              <h2 id="donate-title" class="section-title">Support</h2>
+              <p>
+                I write code. Sometimes it’s useful.
+                If you think so too, you can support it here.
+              </p>
+            </div>
+            <div class="donate-actions">
+              <div class="sponsor-card">
+                <span class="donate-label">Sponsors</span>
+                <a class="button sponsor-button" href="https://github.com/sponsors/Lanjelin" target="_blank" rel="noreferrer">
+                  GitHub Sponsors
+                </a>
+              </div>
+              <div class="btc-card">
+                <span class="donate-label">BTC address</span>
+                <code>bc1qn6e9vcpjjkf9watj2g729vauc5hcvve3pe2862</code>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="repo-card-template">
+      <article class="card">
+        <div class="card-top">
+          <h3 class="card-title"></h3>
+          <span class="chip"></span>
+        </div>
+        <p class="card-desc"></p>
+        <div class="card-footer">
+          <span class="card-stats"></span>
+          <a class="card-link" target="_blank" rel="noreferrer">Open</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

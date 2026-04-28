@@ -1,0 +1,61 @@
+name: Build and deploy Pages
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate site data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node tools/generate-site-data.mjs
+
+      - name: Prepare site
+        run: |
+          rm -rf dist
+          mkdir -p dist/data
+          cp index.html script.js styles.css dist/
+          cp data/site.json dist/data/site.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

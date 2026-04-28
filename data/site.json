@@ -1,0 +1,89 @@
+{
+  "profile": {
+    "name": "Lanjelin",
+    "bio": "Pondering upon world domination.",
+    "company": "Company",
+    "location": "Norway",
+    "avatar_url": "https://github.com/Lanjelin.png?size=192",
+    "public_repos": 67,
+    "followers": 28,
+    "package_count": 30,
+    "total_stars": 123
+  },
+  "repos": [
+    {
+      "name": "AmiiboConverter",
+      "description": "Convert, duplicate, randomize. A tool for Amiibo.",
+      "language": "Python",
+      "stars": 152,
+      "forks": 14,
+      "url": "https://github.com/Lanjelin/AmiiboConverter"
+    },
+    {
+      "name": "NBNO.py",
+      "description": "NB.no nedlaster for books and media.",
+      "language": "Python",
+      "stars": 58,
+      "forks": 13,
+      "url": "https://github.com/Lanjelin/NBNO.py"
+    },
+    {
+      "name": "docker-remote-desktop",
+      "description": "Remote desktop access for Remmina, NoMachine, Parsec, and Rustdesk through the browser.",
+      "language": "Dockerfile",
+      "stars": 20,
+      "forks": 2,
+      "url": "https://github.com/Lanjelin/docker-remote-desktop"
+    },
+    {
+      "name": "nvim-docker",
+      "description": "Run NeoVim in Docker, from the terminal or a browser.",
+      "language": "Shell",
+      "stars": 8,
+      "forks": 7,
+      "url": "https://github.com/Lanjelin/nvim-docker"
+    },
+    {
+      "name": "sishc",
+      "description": "A bash script and web app for managing sish tunnels.",
+      "language": "HTML",
+      "stars": 6,
+      "forks": 1,
+      "url": "https://github.com/Lanjelin/sishc"
+    },
+    {
+      "name": "InternettUtenModem",
+      "description": "A retro web project asking what the internet looked like in 1997.",
+      "language": "HTML",
+      "stars": 1,
+      "forks": 0,
+      "url": "https://github.com/Lanjelin/InternettUtenModem"
+    }
+  ],
+  "packages": [
+    {
+      "name": "ghcr.io/lanjelin/nbnopy",
+      "description": "Container build for the NBNO.py downloader.",
+      "statsText": "GHCR artifact · repo-backed",
+      "url": "https://github.com/Lanjelin/NBNO.py"
+    },
+    {
+      "name": "ghcr.io/lanjelin/sishc",
+      "description": "Packaged tunnel manager image from the sishc project.",
+      "statsText": "GHCR artifact · repo-backed",
+      "url": "https://github.com/Lanjelin/sishc"
+    },
+    {
+      "name": "ghcr.io/lanjelin/obsidian-docker",
+      "description": "Obsidian in a browser-friendly container.",
+      "statsText": "GHCR artifact · repo-backed",
+      "url": "https://github.com/Lanjelin/Obsidian-docker"
+    },
+    {
+      "name": "GitHub Packages",
+      "description": "Public package listings were not available from the API, so this section points back to package-producing repos.",
+      "statsText": "Profile packages: 30",
+      "url": "https://github.com/Lanjelin?tab=packages"
+    }
+  ]
+}
