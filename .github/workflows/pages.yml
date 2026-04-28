@@ -32,6 +32,7 @@ jobs:
 
       - name: Generate site data
         env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node tools/generate-site-data.mjs
 
