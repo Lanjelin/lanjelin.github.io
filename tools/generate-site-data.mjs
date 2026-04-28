@@ -57,25 +57,6 @@ async function fetchJson(url) {
   return response.json();
 }
 
-async function fetchHtml(url) {
-  const headers = {
-    Accept: "text/html,application/xhtml+xml",
-    "User-Agent": "Mozilla/5.0 (compatible; GitHubPagesBot/1.0)",
-  };
-
-  const token = process.env.GH_PACKAGES_TOKEN || process.env.GITHUB_TOKEN;
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`);
-  }
-
-  return response.text();
-}
-
 function sortRepos(repos) {
   return repos
     .filter((repo) => !repo.fork)
@@ -129,118 +110,12 @@ function newestVersionDate(versions) {
   return formatDate(timestamps[0].toISOString());
 }
 
-function extractMetaContent(html, metaName) {
-  const regex = new RegExp(
-    `<meta[^>]+(?:name|property)=["']${metaName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]+content=["']([^"']+)["'][^>]*>`,
-    "i",
-  );
-  const match = html.match(regex);
-  return match ? match[1].trim() : "";
-}
-
-function htmlToText(html) {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, "\n")
-    .replace(/<style[\s\S]*?<\/style>/gi, "\n")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|tr|h[1-6]|section|article|main|nav|header|footer)>/gi, "\n")
-    .replace(/<[^>]+>/g, "\n")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
 function cleanAboutText(text) {
   return String(text || "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\s+\|\s+GitHub$/, "")
     .replace(/\s+\|\s+.*$/, "");
-}
-
-function readmeSummaryFromContent(content) {
-  const lines = String(content || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      continue;
-    }
-    if (line.startsWith("!") || line.includes("github.com")) {
-      continue;
-    }
-    const summary = cleanAboutText(line.replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/[*_`~]/g, ""));
-    if (summary.length >= 20) {
-      return summary;
-    }
-  }
-
-  return "";
-}
-
-function extractReadmeLine(html) {
-  const lines = htmlToText(html);
-  const readmeIndex = lines.findIndex((line) => /^README$/i.test(line));
-  const startIndex = readmeIndex >= 0 ? readmeIndex + 1 : 0;
-  const skip = new Set([
-    "Learn more about packages",
-    "Install from the command line",
-    "Details",
-    "Last published",
-    "Total downloads",
-    "README",
-  ]);
-
-  for (let i = startIndex; i < lines.length; i += 1) {
-    const line = lines[i];
-    if (!line || skip.has(line)) {
-      continue;
-    }
-    if (line.startsWith("Published ") || line.startsWith("Version downloads")) {
-      continue;
-    }
-    if (line.length < 8) {
-      continue;
-    }
-    return line;
-  }
-
-  return "";
-}
-
-function extractConnectedRepoPath(html) {
-  const candidates = [];
-  const sourceIndex = html.toLowerCase().indexOf("repository source");
-  const searchSpace = sourceIndex >= 0 ? html.slice(sourceIndex, sourceIndex + 6000) : html;
-  const repoUrlRegex = /(?:https:\/\/github\.com)?\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)(?:["'?#/>\s]|$)/g;
-  let match;
-
-  while ((match = repoUrlRegex.exec(searchSpace))) {
-    const owner = match[1];
-    const repo = match[2];
-    if (["users", "orgs", "settings", "marketplace", "topics"].includes(owner)) {
-      continue;
-    }
-    if (repo === "packages" || repo === "search") {
-      continue;
-    }
-    const path = `${owner}/${repo}`;
-    if (!candidates.includes(path)) {
-      candidates.push(path);
-    }
-  }
-
-  return candidates[0] || "";
 }
 
 async function sortPackages() {
@@ -251,21 +126,9 @@ async function sortPackages() {
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}`),
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
     ]);
-    const pageHtml = await fetchHtml(detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`);
-    const connectedRepoPath = extractConnectedRepoPath(pageHtml) || PACKAGE_REPOS[name] || "";
-    const pageReadmeLine = cleanAboutText(extractReadmeLine(pageHtml));
-    const connectedRepo = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}`).catch(() => null) : null;
-    const repoReadme = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}/readme`).catch(() => null) : null;
-    const repoReadmeSummary = repoReadme?.content ? readmeSummaryFromContent(Buffer.from(repoReadme.content, "base64").toString("utf8")) : "";
-    const about = cleanAboutText(
-      connectedRepo?.description ||
-        repoReadmeSummary ||
-        pageReadmeLine ||
-        extractMetaContent(pageHtml, "description") ||
-        extractMetaContent(pageHtml, "og:description") ||
-        detail.description ||
-        "",
-    );
+    const repoPath = PACKAGE_REPOS[name];
+    const connectedRepo = repoPath ? await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null) : null;
+    const about = cleanAboutText(connectedRepo?.description || "");
     const updated = newestVersionDate(versions);
 
     if (STRICT_SITE_DATA && !about) {
