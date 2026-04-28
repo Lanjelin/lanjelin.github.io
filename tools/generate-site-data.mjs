@@ -13,6 +13,15 @@ const PACKAGE_ORDER = [
   "handl",
 ];
 
+const PACKAGE_REPOS = {
+  "openaudible-docker": "Lanjelin/openaudible-docker",
+  "tor-zero": "Lanjelin/tor-zero",
+  "monerod-zero": "Lanjelin/monerod-zero",
+  "nvim-docker": "Lanjelin/nvim-docker",
+  "proton-bridge-rootless": "Lanjelin/proton-bridge-rootless",
+  handl: "Lanjelin/handl",
+};
+
 const FALLBACK = {
   profile: {
     name: "Lanjelin",
@@ -157,6 +166,28 @@ function cleanAboutText(text) {
     .replace(/\s+\|\s+.*$/, "");
 }
 
+function readmeSummaryFromContent(content) {
+  const lines = String(content || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    if (line.startsWith("#")) {
+      continue;
+    }
+    if (line.startsWith("!") || line.includes("github.com")) {
+      continue;
+    }
+    const summary = cleanAboutText(line.replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/[*_`~]/g, ""));
+    if (summary.length >= 20) {
+      return summary;
+    }
+  }
+
+  return "";
+}
+
 function extractReadmeLine(html) {
   const lines = htmlToText(html);
   const readmeIndex = lines.findIndex((line) => /^README$/i.test(line));
@@ -212,37 +243,6 @@ function extractConnectedRepoPath(html) {
   return candidates[0] || "";
 }
 
-function stripMarkdown(text) {
-  return String(text || "")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
-    .replace(/[*_`~]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function readmeSummaryFromContent(content) {
-  const lines = String(content || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      continue;
-    }
-    if (line.startsWith("!") || line.includes("github.com")) {
-      continue;
-    }
-    const summary = stripMarkdown(line);
-    if (summary.length >= 20) {
-      return summary;
-    }
-  }
-
-  return "";
-}
-
 async function sortPackages() {
   const packages = [];
 
@@ -252,22 +252,20 @@ async function sortPackages() {
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
     ]);
     const pageHtml = await fetchHtml(detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`);
-    const connectedRepoPath = extractConnectedRepoPath(pageHtml);
+    const connectedRepoPath = extractConnectedRepoPath(pageHtml) || PACKAGE_REPOS[name] || "";
     const pageReadmeLine = cleanAboutText(extractReadmeLine(pageHtml));
-    const repoCandidates = [connectedRepoPath, `${USERNAME}/${name}`].filter(Boolean);
-    let about = "";
-
-    for (const repoPath of repoCandidates) {
-      const connectedRepo = await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null);
-      const repoReadme = await fetchJson(`${API_BASE}/repos/${repoPath}/readme`).catch(() => null);
-      const readmeSummary = repoReadme?.content ? readmeSummaryFromContent(Buffer.from(repoReadme.content, "base64").toString("utf8")) : "";
-      about = cleanAboutText(connectedRepo?.description || readmeSummary);
-      if (about) {
-        break;
-      }
-    }
-
-    about = about || pageReadmeLine || extractMetaContent(pageHtml, "description") || extractMetaContent(pageHtml, "og:description") || detail.description || "";
+    const connectedRepo = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}`).catch(() => null) : null;
+    const repoReadme = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}/readme`).catch(() => null) : null;
+    const repoReadmeSummary = repoReadme?.content ? readmeSummaryFromContent(Buffer.from(repoReadme.content, "base64").toString("utf8")) : "";
+    const about = cleanAboutText(
+      connectedRepo?.description ||
+        repoReadmeSummary ||
+        pageReadmeLine ||
+        extractMetaContent(pageHtml, "description") ||
+        extractMetaContent(pageHtml, "og:description") ||
+        detail.description ||
+        "",
+    );
     const updated = newestVersionDate(versions);
 
     if (STRICT_SITE_DATA && !about) {
