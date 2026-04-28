@@ -82,7 +82,9 @@ async function sortPackages() {
 
   for (const type of PACKAGE_TYPES) {
     try {
-      const entries = await fetchJson(`${API_BASE}/users/${USERNAME}/packages?package_type=${encodeURIComponent(type)}`);
+      const entries = await fetchJson(
+        `${API_BASE}/users/${USERNAME}/packages?package_type=${encodeURIComponent(type)}&per_page=100`,
+      );
       discovered.push(...entries);
     } catch {
       continue;

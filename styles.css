@@ -339,7 +339,13 @@ h1 {
 }
 
 .sponsor-button {
-  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 19px;
+  padding: 1px 8px 0;
+  text-align: center;
 }
 
 .btc-card code {
