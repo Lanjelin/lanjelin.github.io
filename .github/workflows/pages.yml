@@ -57,6 +57,11 @@ jobs:
             throw new Error('Generated site data still contains placeholder package entries.');
           }
 
+          const hasVersionStats = packages.every((entry) => /versions$/.test(String(entry?.statsText || '').trim()));
+          if (!hasVersionStats) {
+            throw new Error('Generated site data does not contain version counts for all packages.');
+          }
+
           if (packages.length === 0) {
             throw new Error('Generated site data contains no packages.');
           }

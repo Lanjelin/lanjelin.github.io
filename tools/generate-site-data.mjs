@@ -3,7 +3,6 @@ import path from "node:path";
 
 const USERNAME = "Lanjelin";
 const API_BASE = "https://api.github.com";
-const PACKAGE_TYPES = ["container", "npm", "maven", "rubygems", "docker", "nuget"];
 const STRICT_SITE_DATA = process.env.STRICT_SITE_DATA === "true";
 
 const FALLBACK = {
@@ -62,7 +61,7 @@ function sortRepos(repos) {
     }));
 }
 
-async function downloadCountForPackage(entry) {
+async function countPackageVersions(entry) {
   const packageType = entry.package_type || entry.type || "package";
   const packageName = entry.name || entry.package_name || "";
   if (!packageName) {
@@ -73,7 +72,7 @@ async function downloadCountForPackage(entry) {
     const versions = await fetchJson(
       `${API_BASE}/users/${USERNAME}/packages/${encodeURIComponent(packageType)}/${encodeURIComponent(packageName)}/versions`,
     );
-    return versions.reduce((sum, version) => sum + (version.download_count || 0), 0);
+    return Array.isArray(versions) ? versions.length : 0;
   } catch (error) {
     if (STRICT_SITE_DATA) {
       throw error;
@@ -85,17 +84,14 @@ async function downloadCountForPackage(entry) {
 async function sortPackages() {
   const discovered = [];
 
-  for (const type of PACKAGE_TYPES) {
-    try {
-      const entries = await fetchJson(
-        `${API_BASE}/users/${USERNAME}/packages?package_type=${encodeURIComponent(type)}&per_page=100`,
-      );
-      discovered.push(...entries);
-    } catch (error) {
-      if (STRICT_SITE_DATA) {
-        throw error;
-      }
-      continue;
+  try {
+    const entries = await fetchJson(
+      `${API_BASE}/users/${USERNAME}/packages?package_type=container&per_page=100`,
+    );
+    discovered.push(...entries);
+  } catch (error) {
+    if (STRICT_SITE_DATA) {
+      throw error;
     }
   }
 
@@ -106,22 +102,22 @@ async function sortPackages() {
     }
     ranked.push({
       entry,
-      downloads: await downloadCountForPackage(entry),
+      versions: await countPackageVersions(entry),
     });
   }
 
-  ranked.sort((a, b) => b.downloads - a.downloads);
+  ranked.sort((a, b) => b.versions - a.versions);
 
   if (STRICT_SITE_DATA && ranked.length === 0) {
     throw new Error("No GitHub packages were returned.");
   }
 
-  return ranked.slice(0, 6).map(({ entry, downloads }) => ({
+  return ranked.slice(0, 6).map(({ entry, versions }) => ({
     name: entry.name,
     description: entry.description || `${entry.package_type || entry.type || "package"} package.`,
     chip: entry.package_type || entry.type || "package",
-    downloadCount: downloads,
-    statsText: `${downloads.toLocaleString()} downloads`,
+    versionCount: versions,
+    statsText: `${versions.toLocaleString()} versions`,
     url: entry.html_url || `https://github.com/${USERNAME}?tab=packages`,
   }));
 }
