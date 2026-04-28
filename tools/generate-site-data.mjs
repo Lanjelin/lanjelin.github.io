@@ -117,6 +117,32 @@ function humanizeSlug(value) {
     .join(" ");
 }
 
+function cleanRepoAbout(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+async function fetchRepoAbout(repoPath, fallbackName) {
+  const repo = await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null);
+  const apiAbout = cleanRepoAbout(repo?.description);
+  if (apiAbout) {
+    return apiAbout;
+  }
+
+  const response = await fetch(`https://github.com/${repoPath}`);
+  if (response.ok) {
+    const html = await response.text();
+    const metaMatch =
+      html.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i) ||
+      html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
+    const pageAbout = cleanRepoAbout(metaMatch?.[1]);
+    if (pageAbout) {
+      return pageAbout;
+    }
+  }
+
+  return humanizeSlug(fallbackName);
+}
+
 async function sortPackages() {
   const packages = [];
 
@@ -126,8 +152,7 @@ async function sortPackages() {
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
     ]);
     const repoPath = PACKAGE_REPOS[name];
-    const connectedRepo = repoPath ? await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null) : null;
-    const about = String(connectedRepo?.description || "").trim() || humanizeSlug(name);
+    const about = repoPath ? await fetchRepoAbout(repoPath, name) : humanizeSlug(name);
     const updated = newestVersionDate(versions);
 
     packages.push({
