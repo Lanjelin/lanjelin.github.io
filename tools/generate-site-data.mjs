@@ -137,6 +137,31 @@ function cleanAboutText(text) {
     .replace(/\s+\|\s+.*$/, "");
 }
 
+function extractConnectedRepoPath(html) {
+  const candidates = [];
+  const sourceIndex = html.toLowerCase().indexOf("repository source");
+  const searchSpace = sourceIndex >= 0 ? html.slice(sourceIndex, sourceIndex + 6000) : html;
+  const repoUrlRegex = /https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)(?:["'?#/>\s]|$)/g;
+  let match;
+
+  while ((match = repoUrlRegex.exec(searchSpace))) {
+    const owner = match[1];
+    const repo = match[2];
+    if (["users", "orgs", "settings", "marketplace", "topics"].includes(owner)) {
+      continue;
+    }
+    if (repo === "packages" || repo === "search") {
+      continue;
+    }
+    const path = `${owner}/${repo}`;
+    if (!candidates.includes(path)) {
+      candidates.push(path);
+    }
+  }
+
+  return candidates[0] || "";
+}
+
 async function sortPackages() {
   const packages = [];
 
@@ -146,8 +171,11 @@ async function sortPackages() {
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
     ]);
     const pageHtml = await fetchHtml(detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`);
+    const connectedRepoPath = extractConnectedRepoPath(pageHtml);
+    const connectedRepo = connectedRepoPath ? await fetchJson(`${API_BASE}/repos/${connectedRepoPath}`) : null;
     const about = cleanAboutText(
-      extractMetaContent(pageHtml, "description") ||
+      connectedRepo?.description ||
+        extractMetaContent(pageHtml, "description") ||
         extractMetaContent(pageHtml, "og:description") ||
         detail.description ||
         "",
