@@ -131,6 +131,12 @@ async function fetchRepoAbout(repoPath, fallbackName) {
   const response = await fetch(`https://github.com/${repoPath}`);
   if (response.ok) {
     const html = await response.text();
+    const titleMatch = html.match(/<title>GitHub - [^:]+: ([^<]+?) · GitHub<\/title>/i);
+    const titleAbout = cleanRepoAbout(titleMatch?.[1]);
+    if (titleAbout) {
+      return titleAbout;
+    }
+
     const metaMatch =
       html.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i) ||
       html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
