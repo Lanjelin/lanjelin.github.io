@@ -125,7 +125,6 @@ async function fetchRepoAbout(repoPath, fallbackName) {
   const repo = await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null);
   const apiAbout = cleanRepoAbout(repo?.description);
   const about = apiAbout || humanizeSlug(fallbackName);
-  console.log(`[packages] ${fallbackName}: ${repoPath} -> ${apiAbout ? "repo.description" : "fallback"}`);
   return about;
 }
 
@@ -144,7 +143,7 @@ async function sortPackages() {
     packages.push({
       name,
       description: about,
-      chip: "published",
+      chip: "image",
       statsText: updated ? `Last updated ${updated}` : "Last updated",
       url: detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
     });

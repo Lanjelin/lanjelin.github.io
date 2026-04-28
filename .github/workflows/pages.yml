@@ -71,7 +71,7 @@ jobs:
             throw new Error('Generated site data does not match the requested package order.');
           }
 
-          const labelsMatch = packages.every((entry) => String(entry?.chip || '') === 'published' && /^Last updated/.test(String(entry?.statsText || '')));
+          const labelsMatch = packages.every((entry) => String(entry?.chip || '') === 'image' && /^Last updated/.test(String(entry?.statsText || '')));
           if (!labelsMatch) {
             throw new Error('Generated site data does not have the expected package labels.');
           }

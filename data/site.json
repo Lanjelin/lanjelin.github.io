@@ -64,42 +64,42 @@
     {
       "name": "openaudible-docker",
       "description": "Openaudible Docker",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/openaudible-docker"
     },
     {
       "name": "tor-zero",
       "description": "Tor Zero",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/tor-zero"
     },
     {
       "name": "monerod-zero",
       "description": "Monerod Zero",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/monerod-zero"
     },
     {
       "name": "nvim-docker",
       "description": "Nvim Docker",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/nvim-docker"
     },
     {
       "name": "proton-bridge-rootless",
       "description": "Proton Bridge Rootless",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/proton-bridge-rootless"
     },
     {
       "name": "handl",
       "description": "Handl",
-      "chip": "published",
+      "chip": "image",
       "statsText": "Last updated",
       "url": "https://github.com/users/Lanjelin/packages/container/package/handl"
     }
