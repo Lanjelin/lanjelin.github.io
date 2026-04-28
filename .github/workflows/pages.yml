@@ -34,6 +34,7 @@ jobs:
         env:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          STRICT_SITE_DATA: "true"
         run: node tools/generate-site-data.mjs
 
       - name: Prepare site

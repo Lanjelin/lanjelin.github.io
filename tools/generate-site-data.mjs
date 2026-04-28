@@ -4,6 +4,7 @@ import path from "node:path";
 const USERNAME = "Lanjelin";
 const API_BASE = "https://api.github.com";
 const PACKAGE_TYPES = ["container", "npm", "maven", "rubygems", "docker", "nuget"];
+const STRICT_SITE_DATA = process.env.STRICT_SITE_DATA === "true";
 
 const FALLBACK = {
   profile: {
@@ -73,7 +74,10 @@ async function downloadCountForPackage(entry) {
       `${API_BASE}/users/${USERNAME}/packages/${encodeURIComponent(packageType)}/${encodeURIComponent(packageName)}/versions`,
     );
     return versions.reduce((sum, version) => sum + (version.download_count || 0), 0);
-  } catch {
+  } catch (error) {
+    if (STRICT_SITE_DATA) {
+      throw error;
+    }
     return 0;
   }
 }
@@ -87,7 +91,10 @@ async function sortPackages() {
         `${API_BASE}/users/${USERNAME}/packages?package_type=${encodeURIComponent(type)}&per_page=100`,
       );
       discovered.push(...entries);
-    } catch {
+    } catch (error) {
+      if (STRICT_SITE_DATA) {
+        throw error;
+      }
       continue;
     }
   }
@@ -105,6 +112,10 @@ async function sortPackages() {
 
   ranked.sort((a, b) => b.downloads - a.downloads);
 
+  if (STRICT_SITE_DATA && ranked.length === 0) {
+    throw new Error("No GitHub packages were returned.");
+  }
+
   return ranked.slice(0, 6).map(({ entry, downloads }) => ({
     name: entry.name,
     description: entry.description || `${entry.package_type || entry.type || "package"} package.`,
@@ -116,15 +127,21 @@ async function sortPackages() {
 }
 
 async function main() {
-  const [profile, repos, packages] = await Promise.allSettled([
-    fetchJson(`${API_BASE}/users/${USERNAME}`),
-    fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`),
-    sortPackages(),
-  ]);
-
-  const profileValue = profile.status === "fulfilled" ? profile.value : FALLBACK.profile;
-  const repoValue = repos.status === "fulfilled" ? sortRepos(repos.value) : FALLBACK.repos;
-  const packageValue = packages.status === "fulfilled" ? packages.value : FALLBACK.packages;
+  const [profileValue, repoValue, packageValue] = STRICT_SITE_DATA
+    ? [
+        await fetchJson(`${API_BASE}/users/${USERNAME}`),
+        sortRepos(await fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`)),
+        await sortPackages(),
+      ]
+    : await Promise.allSettled([
+        fetchJson(`${API_BASE}/users/${USERNAME}`),
+        fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`),
+        sortPackages(),
+      ]).then(([profile, repos, packages]) => [
+        profile.status === "fulfilled" ? profile.value : FALLBACK.profile,
+        repos.status === "fulfilled" ? sortRepos(repos.value) : FALLBACK.repos,
+        packages.status === "fulfilled" ? packages.value : FALLBACK.packages,
+      ]);
 
   const data = {
     generatedAt: new Date().toISOString(),
