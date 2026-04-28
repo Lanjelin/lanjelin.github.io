@@ -37,6 +37,31 @@ jobs:
           STRICT_SITE_DATA: "true"
         run: node tools/generate-site-data.mjs
 
+      - name: Validate generated site data
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const data = JSON.parse(fs.readFileSync('data/site.json', 'utf8'));
+          const packages = Array.isArray(data.packages) ? data.packages : [];
+          const hasPlaceholder = packages.some((entry) => {
+            const text = `${entry?.name || ''} ${entry?.description || ''} ${entry?.statsText || ''}`;
+            return (
+              text.includes('GHCR artifact · repo-backed') ||
+              text.includes('Profile packages: 30') ||
+              text.includes('Public package listings were not available from the API') ||
+              text.includes('GitHub Packages')
+            );
+          });
+
+          if (hasPlaceholder) {
+            throw new Error('Generated site data still contains placeholder package entries.');
+          }
+
+          if (packages.length === 0) {
+            throw new Error('Generated site data contains no packages.');
+          }
+          NODE
+
       - name: Prepare site
         run: |
           rm -rf dist
