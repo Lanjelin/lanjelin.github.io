@@ -124,29 +124,7 @@ function cleanRepoAbout(value) {
 async function fetchRepoAbout(repoPath, fallbackName) {
   const repo = await fetchJson(`${API_BASE}/repos/${repoPath}`).catch(() => null);
   const apiAbout = cleanRepoAbout(repo?.description);
-  if (apiAbout) {
-    return apiAbout;
-  }
-
-  const response = await fetch(`https://github.com/${repoPath}`);
-  if (response.ok) {
-    const html = await response.text();
-    const titleMatch = html.match(/<title>GitHub - [^:]+: ([^<]+?) · GitHub<\/title>/i);
-    const titleAbout = cleanRepoAbout(titleMatch?.[1]);
-    if (titleAbout) {
-      return titleAbout;
-    }
-
-    const metaMatch =
-      html.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i) ||
-      html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
-    const pageAbout = cleanRepoAbout(metaMatch?.[1]);
-    if (pageAbout) {
-      return pageAbout;
-    }
-  }
-
-  return humanizeSlug(fallbackName);
+  return apiAbout || humanizeSlug(fallbackName);
 }
 
 async function sortPackages() {
