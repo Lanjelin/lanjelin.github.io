@@ -69,38 +69,74 @@ function sortRepos(repos) {
     }));
 }
 
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
+function newestVersionDate(versions) {
+  if (!Array.isArray(versions) || versions.length === 0) {
+    return "";
+  }
+
+  const timestamps = versions
+    .map((version) => version.updated_at || version.created_at || version.published_at)
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()));
+
+  if (timestamps.length === 0) {
+    return "";
+  }
+
+  timestamps.sort((a, b) => b.getTime() - a.getTime());
+  return formatDate(timestamps[0].toISOString());
+}
+
 async function sortPackages() {
   const entries = await fetchJson(`${API_BASE}/users/${USERNAME}/packages?package_type=container&per_page=100`);
   const byName = new Map(entries.map((entry) => [entry.name, entry]));
 
-  const packages = PACKAGE_ORDER.map((name) => {
+  const packages = [];
+
+  for (const name of PACKAGE_ORDER) {
     const entry = byName.get(name);
     if (!entry) {
       if (STRICT_SITE_DATA) {
         throw new Error(`Missing package: ${name}`);
       }
 
-      return {
+      packages.push({
         name,
-        description: "Published package.",
+        description: "About unavailable.",
         chip: "published",
         statsText: "Last updated",
         url: `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
-      };
+      });
+      continue;
     }
 
-    return {
+    const versions = await fetchJson(
+      `${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`,
+    );
+    const updated = newestVersionDate(versions);
+
+    packages.push({
       name,
-      description: "Published package.",
+      description: entry.description || "About unavailable.",
       chip: "published",
-      statsText: `Last updated ${new Date(entry.updated_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      })}`,
+      statsText: updated ? `Last updated ${updated}` : "Last updated",
       url: entry.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
-    };
-  });
+    });
+  }
 
   return packages;
 }

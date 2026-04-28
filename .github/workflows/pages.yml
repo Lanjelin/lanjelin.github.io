@@ -76,6 +76,19 @@ jobs:
             throw new Error('Generated site data does not have the expected package labels.');
           }
 
+          const aboutMatches = packages.every((entry) => {
+            const text = String(entry?.description || '');
+            return text && text !== 'About unavailable.';
+          });
+          if (!aboutMatches) {
+            throw new Error('Generated site data does not contain package about text.');
+          }
+
+          const hasDates = packages.every((entry) => /^Last updated [A-Z][a-z]{2} \d{2}, \d{4}$/.test(String(entry?.statsText || '')));
+          if (!hasDates) {
+            throw new Error('Generated site data does not contain package last-updated dates.');
+          }
+
           if (packages.length === 0) {
             throw new Error('Generated site data contains no packages.');
           }
