@@ -48,6 +48,25 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function fetchHtml(url) {
+  const headers = {
+    Accept: "text/html,application/xhtml+xml",
+    "User-Agent": "Mozilla/5.0 (compatible; GitHubPagesBot/1.0)",
+  };
+
+  const token = process.env.GH_PACKAGES_TOKEN || process.env.GITHUB_TOKEN;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`);
+  }
+
+  return response.text();
+}
+
 function sortRepos(repos) {
   return repos
     .filter((repo) => !repo.fork)
@@ -101,6 +120,23 @@ function newestVersionDate(versions) {
   return formatDate(timestamps[0].toISOString());
 }
 
+function extractMetaContent(html, metaName) {
+  const regex = new RegExp(
+    `<meta[^>]+(?:name|property)=["']${metaName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+    "i",
+  );
+  const match = html.match(regex);
+  return match ? match[1].trim() : "";
+}
+
+function cleanAboutText(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+\|\s+GitHub$/, "")
+    .replace(/\s+\|\s+.*$/, "");
+}
+
 async function sortPackages() {
   const packages = [];
 
@@ -109,11 +145,22 @@ async function sortPackages() {
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}`),
       fetchJson(`${API_BASE}/users/${USERNAME}/packages/container/${encodeURIComponent(name)}/versions`),
     ]);
+    const pageHtml = await fetchHtml(detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`);
+    const about = cleanAboutText(
+      extractMetaContent(pageHtml, "description") ||
+        extractMetaContent(pageHtml, "og:description") ||
+        detail.description ||
+        "",
+    );
     const updated = newestVersionDate(versions);
+
+    if (STRICT_SITE_DATA && !about) {
+      throw new Error(`Missing package about text: ${name}`);
+    }
 
     packages.push({
       name,
-      description: detail.description || "About unavailable.",
+      description: about || "About unavailable.",
       chip: "published",
       statsText: updated ? `Last updated ${updated}` : "Last updated",
       url: detail.html_url || `https://github.com/users/${USERNAME}/packages/container/package/${encodeURIComponent(name)}`,
