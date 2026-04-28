@@ -128,6 +128,26 @@ async function fetchRepoAbout(repoPath, fallbackName) {
   return about;
 }
 
+async function countPackages() {
+  let total = 0;
+
+  for (let page = 1; page <= 10; page += 1) {
+    const packages = await fetchJson(
+      `${API_BASE}/users/${USERNAME}/packages?package_type=container&per_page=100&page=${page}`
+    );
+    if (!Array.isArray(packages) || packages.length === 0) {
+      break;
+    }
+
+    total += packages.length;
+    if (packages.length < 100) {
+      break;
+    }
+  }
+
+  return total;
+}
+
 async function sortPackages() {
   const packages = [];
 
@@ -153,21 +173,29 @@ async function sortPackages() {
 }
 
 async function main() {
-  const [profileValue, repoValue, packageValue] = STRICT_SITE_DATA
+  const [profileValue, repoSourceValue, packageValue, packageCountValue] = STRICT_SITE_DATA
     ? [
         await fetchJson(`${API_BASE}/users/${USERNAME}`),
-        sortRepos(await fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`)),
+        await fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`),
         await sortPackages(),
+        await countPackages(),
       ]
     : await Promise.allSettled([
         fetchJson(`${API_BASE}/users/${USERNAME}`),
         fetchJson(`${API_BASE}/users/${USERNAME}/repos?per_page=100&sort=updated&direction=desc`),
         sortPackages(),
-      ]).then(([profile, repos, packages]) => [
+        countPackages(),
+      ]).then(([profile, repos, packages, packageCount]) => [
         profile.status === "fulfilled" ? profile.value : FALLBACK.profile,
-        repos.status === "fulfilled" ? sortRepos(repos.value) : FALLBACK.repos,
+        repos.status === "fulfilled" ? repos.value : FALLBACK.repos,
         packages.status === "fulfilled" ? packages.value : FALLBACK.packages,
+        packageCount.status === "fulfilled" ? packageCount.value : FALLBACK.profile.package_count,
       ]);
+
+  const repoValue = sortRepos(repoSourceValue);
+  const totalStars = repoSourceValue
+    .filter((repo) => !repo.fork)
+    .reduce((sum, repo) => sum + (repo.stargazers_count || 0), 0);
 
   const data = {
     generatedAt: new Date().toISOString(),
@@ -179,10 +207,8 @@ async function main() {
       avatar_url: profileValue.avatar_url || FALLBACK.profile.avatar_url,
       public_repos: profileValue.public_repos ?? repoValue.length,
       followers: profileValue.followers ?? FALLBACK.profile.followers,
-      package_count: packageValue.length,
-      total_stars:
-        profileValue.total_stars ??
-        repoValue.reduce((sum, repo) => sum + (repo.stars || 0), 0),
+      package_count: packageCountValue ?? FALLBACK.profile.package_count,
+      total_stars: totalStars,
     },
     repos: repoValue,
     packages: packageValue,
